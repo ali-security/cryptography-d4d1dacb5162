@@ -1,8 +1,7 @@
 name: Auto-close stale issues
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * *'
+  # seal: schedule trigger removed on fork
 
 jobs:
   auto-close:

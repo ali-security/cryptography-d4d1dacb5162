@@ -1,8 +1,7 @@
 name: Lock Issues
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 3 * * *'
+  # seal: schedule trigger removed on fork
 
 jobs:
   lock:

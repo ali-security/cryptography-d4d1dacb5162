@@ -1,10 +1,6 @@
 name: Benchmark
 on:
-  pull_request:
-    paths:
-      - ".github/workflows/benchmark.yml"
-      - "src/**"
-      - "tests/**"
+  # seal: pull_request trigger removed on fork
   workflow_dispatch:
     inputs:
       base_commit:

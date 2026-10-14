@@ -1,12 +1,7 @@
 name: linkcheck
 on:
-  pull_request:
-    paths:
-      - docs/conf.py
-      - .github/workflows/linkcheck.yml
-  schedule:
-    # Run once a week on Fridays
-    - cron: "0 0 * * FRI"
+  # seal: pull_request/schedule triggers removed on fork
+  workflow_dispatch:
 
 permissions:
   contents: read

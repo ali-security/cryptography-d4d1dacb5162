@@ -11,9 +11,7 @@ on:
         required: true
         type: choice
         options: ["testpypi", "pypi"]
-  workflow_run:
-    workflows: ["Wheel Builder"]
-    types: [completed]
+  # seal: workflow_run trigger removed on fork (would fire after every Wheel Builder run)
 
 env:
   PUBLISH_REQUIREMENTS_PATH: .github/requirements/publish-requirements.txt

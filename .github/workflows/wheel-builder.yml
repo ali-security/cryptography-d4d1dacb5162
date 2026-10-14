@@ -6,18 +6,7 @@ on:
     inputs:
       version:
         description: The version to build
-  # Do not add any non-tag push events without updating pypi-publish.yml. If
-  # you do, it'll upload wheels to PyPI.
-  push:
-    tags:
-      - '*.*'
-      - '*.*.*'
-  pull_request:
-    paths:
-      - .github/workflows/wheel-builder.yml
-      - .github/requirements/**
-      - pyproject.toml
-      - vectors/pyproject.toml
+  # seal: push/pull_request triggers removed; fork runs via workflow_dispatch only
 
 env:
   BUILD_REQUIREMENTS_PATH: .github/requirements/build-requirements.txt
@@ -27,6 +16,7 @@ jobs:
   sdist:
     runs-on: ubuntu-latest
     name: sdists
+    timeout-minutes: 15  # seal: cap job runtime
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -69,46 +59,51 @@ jobs:
           - { VERSION: "cp311-cp311", ABI_VERSION: 'py311' }
           - { VERSION: "cp314-cp314t" }
           - { VERSION: "pp311-pypy311_pp73" }
+        # seal: containers pinned by digest to the 2026-06-12 builds that produced the public
+        # 49.0.0 wheels (OpenSSL 4.0.1, rustc 1.96.0); the moving tags now ship newer OpenSSL/rustc.
         MANYLINUX:
-          - { NAME: "manylinux2014_x86_64", CONTAINER: "cryptography-manylinux2014:x86_64", RUNNER: "ubuntu-latest" }
-          - { NAME: "manylinux_2_28_x86_64", CONTAINER: "cryptography-manylinux_2_28:x86_64", RUNNER: "ubuntu-latest"}
-          - { NAME: "manylinux_2_34_x86_64", CONTAINER: "cryptography-manylinux_2_34:x86_64", RUNNER: "ubuntu-latest"}
-          - { NAME: "musllinux_1_2_x86_64", CONTAINER: "cryptography-musllinux_1_2:x86_64", RUNNER: "ubuntu-latest"}
+          - { NAME: "manylinux2014_x86_64", CONTAINER: "cryptography-manylinux2014@sha256:fbe52d8fa1ade3cbcb625dc8b3a588c2962dd9f203bc71e51222cac06921b225", RUNNER: "ubuntu-latest" }
+          - { NAME: "manylinux_2_28_x86_64", CONTAINER: "cryptography-manylinux_2_28@sha256:d83f9754f53028d17acd8d6f6f0e817a4dc37dc41ce5b3b99d4c9f6917a4b606", RUNNER: "ubuntu-latest"}
+          - { NAME: "manylinux_2_34_x86_64", CONTAINER: "cryptography-manylinux_2_34@sha256:fa0811025c6558c11af4b6060e8b570944c31610804790baa2b267dabd0281b1", RUNNER: "ubuntu-latest"}
+          - { NAME: "musllinux_1_2_x86_64", CONTAINER: "cryptography-musllinux_1_2@sha256:06635b4997ad56989906dfc52f869c35252c718fa1c18aa8d8d3e3318abc64cb", RUNNER: "ubuntu-latest"}
 
-          - { NAME: "manylinux2014_aarch64", CONTAINER: "cryptography-manylinux2014_aarch64", RUNNER: "ubuntu-24.04-arm" }
-          - { NAME: "manylinux_2_28_aarch64", CONTAINER: "cryptography-manylinux_2_28:aarch64", RUNNER: "ubuntu-24.04-arm" }
-          - { NAME: "manylinux_2_34_aarch64", CONTAINER: "cryptography-manylinux_2_34:aarch64", RUNNER: "ubuntu-24.04-arm" }
-          - { NAME: "musllinux_1_2_aarch64", CONTAINER: "cryptography-musllinux_1_2:aarch64", RUNNER: "ubuntu-24.04-arm" }
+          - { NAME: "manylinux2014_aarch64", CONTAINER: "cryptography-manylinux2014_aarch64@sha256:6586cb34b91b853c669f7c01ddd873aa63f735536244fa51a4f68b18a394a033", RUNNER: "ubuntu-24.04-arm" }
+          - { NAME: "manylinux_2_28_aarch64", CONTAINER: "cryptography-manylinux_2_28@sha256:1098856a296b34efc27e2166e5079e030537fc8ab3ada74d98bc436358211eb3", RUNNER: "ubuntu-24.04-arm" }
+          - { NAME: "manylinux_2_34_aarch64", CONTAINER: "cryptography-manylinux_2_34@sha256:be68aac8908b6e2c6d0b0aa2e23b4b949612c8a380b04383c4c1e09d131b53ad", RUNNER: "ubuntu-24.04-arm" }
+          - { NAME: "musllinux_1_2_aarch64", CONTAINER: "cryptography-musllinux_1_2@sha256:784f4dee64e5a7f1c9b20bd1f4f1b49c6e4e6188386062704e764971be341e0b", RUNNER: "ubuntu-24.04-arm" }
 
-          - { NAME: "manylinux_2_31_armv7l", CONTAINER: "cryptography-manylinux_2_31:armv7l", RUNNER: "ubuntu-24.04-arm" }
+          - { NAME: "manylinux_2_31_armv7l", CONTAINER: "cryptography-manylinux_2_31@sha256:9124629d526e298d67ba90ff1841fdc828b3201ab8e6333cad0f69a783037d2d", RUNNER: "ubuntu-24.04-arm" }
 
-          - { NAME: "manylinux_2_28_ppc64le", CONTAINER: "cryptography-manylinux_2_28:ppc64le", RUNNER: "ubuntu-24.04-ppc64le" }
-          - { NAME: "manylinux_2_34_ppc64le", CONTAINER: "cryptography-manylinux_2_34:ppc64le", RUNNER: "ubuntu-24.04-ppc64le" }
+          # seal: no ppc64le runner on fork; built by manylinux-ppc64le job
+          # - { NAME: "manylinux_2_28_ppc64le", CONTAINER: "cryptography-manylinux_2_28@sha256:fe823b7e47eaf954741cc01698948b3eea09817d0df2a8c2f3501d1d750258ef", RUNNER: "ubuntu-24.04-ppc64le" }
+          # - { NAME: "manylinux_2_34_ppc64le", CONTAINER: "cryptography-manylinux_2_34@sha256:4a2bc100ea7a2ff077c5e162ef0e6ce424cce719ac565bc308c655b01f7932a2", RUNNER: "ubuntu-24.04-ppc64le" }
 
         exclude:
           # There are no readily available musllinux PyPy distributions
           - PYTHON: { VERSION: "pp311-pypy311_pp73" }
-            MANYLINUX: { NAME: "musllinux_1_2_x86_64", CONTAINER: "cryptography-musllinux_1_2:x86_64", RUNNER: "ubuntu-latest"}
+            MANYLINUX: { NAME: "musllinux_1_2_x86_64", CONTAINER: "cryptography-musllinux_1_2@sha256:06635b4997ad56989906dfc52f869c35252c718fa1c18aa8d8d3e3318abc64cb", RUNNER: "ubuntu-latest"}
           - PYTHON: { VERSION: "pp311-pypy311_pp73" }
-            MANYLINUX: { NAME: "musllinux_1_2_aarch64", CONTAINER: "cryptography-musllinux_1_2:aarch64", RUNNER: "ubuntu-24.04-arm" }
+            MANYLINUX: { NAME: "musllinux_1_2_aarch64", CONTAINER: "cryptography-musllinux_1_2@sha256:784f4dee64e5a7f1c9b20bd1f4f1b49c6e4e6188386062704e764971be341e0b", RUNNER: "ubuntu-24.04-arm" }
 
             # We also don't build pypy wheels for anything except the latest manylinux
           - PYTHON: { VERSION: "pp311-pypy311_pp73" }
-            MANYLINUX: { NAME: "manylinux2014_x86_64", CONTAINER: "cryptography-manylinux2014:x86_64", RUNNER: "ubuntu-latest"}
+            MANYLINUX: { NAME: "manylinux2014_x86_64", CONTAINER: "cryptography-manylinux2014@sha256:fbe52d8fa1ade3cbcb625dc8b3a588c2962dd9f203bc71e51222cac06921b225", RUNNER: "ubuntu-latest"}
           - PYTHON: { VERSION: "pp311-pypy311_pp73" }
-            MANYLINUX: { NAME: "manylinux2014_aarch64", CONTAINER: "cryptography-manylinux2014_aarch64", RUNNER: "ubuntu-24.04-arm" }
+            MANYLINUX: { NAME: "manylinux2014_aarch64", CONTAINER: "cryptography-manylinux2014_aarch64@sha256:6586cb34b91b853c669f7c01ddd873aa63f735536244fa51a4f68b18a394a033", RUNNER: "ubuntu-24.04-arm" }
 
           # No PyPy on armv7l either
           - PYTHON: { VERSION: "pp311-pypy311_pp73" }
-            MANYLINUX: { NAME: "manylinux_2_31_armv7l", CONTAINER: "cryptography-manylinux_2_31:armv7l", RUNNER: "ubuntu-24.04-arm" }
+            MANYLINUX: { NAME: "manylinux_2_31_armv7l", CONTAINER: "cryptography-manylinux_2_31@sha256:9124629d526e298d67ba90ff1841fdc828b3201ab8e6333cad0f69a783037d2d", RUNNER: "ubuntu-24.04-arm" }
 
           # No PyPy on ppc64le
-          - PYTHON: { VERSION: "pp311-pypy311_pp73" }
-            MANYLINUX: { NAME: "manylinux_2_34_ppc64le", CONTAINER: "cryptography-manylinux_2_34:ppc64le", RUNNER: "ubuntu-24.04-ppc64le" }
-          - PYTHON: { VERSION: "pp311-pypy311_pp73" }
-            MANYLINUX: { NAME: "manylinux_2_28_ppc64le", CONTAINER: "cryptography-manylinux_2_28:ppc64le", RUNNER: "ubuntu-24.04-ppc64le" }
+          # seal: no ppc64le runner on fork; built by manylinux-ppc64le job
+          # - PYTHON: { VERSION: "pp311-pypy311_pp73" }
+          #   MANYLINUX: { NAME: "manylinux_2_34_ppc64le", CONTAINER: "cryptography-manylinux_2_34@sha256:4a2bc100ea7a2ff077c5e162ef0e6ce424cce719ac565bc308c655b01f7932a2", RUNNER: "ubuntu-24.04-ppc64le" }
+          # - PYTHON: { VERSION: "pp311-pypy311_pp73" }
+          #   MANYLINUX: { NAME: "manylinux_2_28_ppc64le", CONTAINER: "cryptography-manylinux_2_28@sha256:fe823b7e47eaf954741cc01698948b3eea09817d0df2a8c2f3501d1d750258ef", RUNNER: "ubuntu-24.04-ppc64le" }
 
     name: "${{ matrix.PYTHON.VERSION }} for ${{ matrix.MANYLINUX.NAME }}"
+    timeout-minutes: 45  # seal: cap job runtime
     steps:
       - name: Ridiculous-er workaround for static node
         run: |
@@ -155,7 +150,7 @@ jobs:
       - run: unzip wheelhouse/*.whl -d execstack.check
       - run: |
           results=$(readelf -lW execstack.check/cryptography/hazmat/bindings/*.so)
-          count=$(echo "$results" | grep -c 'GNU_STACK.*[R ][W ]E' || true)
+          count=$(echo "$results" | awk '/GNU_STACK.*[R ][W ]E/{n++} END{print n+0}')  # seal: awk count replaces grep -c with a masked exit status (same result)
           if [ "$count" -ne 0 ]; then
             exit 1
           else
@@ -174,9 +169,111 @@ jobs:
           name: "cryptography-${{ github.event.inputs.version }}-${{ matrix.MANYLINUX.NAME }}-${{ matrix.PYTHON.VERSION }}-${{ matrix.PYTHON.ABI_VERSION }}"
           path: wheelhouse/
 
+  # seal: upstream builds these on a native ubuntu-24.04-ppc64le runner the fork does not have; same image, same commands, run under QEMU.
+  manylinux-ppc64le:
+    needs: [sdist]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45  # seal: cap job runtime
+    strategy:
+      fail-fast: false
+      matrix:
+        PYTHON:
+          - { VERSION: "cp311-cp311", ABI_VERSION: 'py39' }
+          - { VERSION: "cp311-cp311", ABI_VERSION: 'py311' }
+          - { VERSION: "cp314-cp314t" }
+        MANYLINUX:
+          - { NAME: "manylinux_2_28_ppc64le", CONTAINER: "cryptography-manylinux_2_28@sha256:fe823b7e47eaf954741cc01698948b3eea09817d0df2a8c2f3501d1d750258ef" }
+          - { NAME: "manylinux_2_34_ppc64le", CONTAINER: "cryptography-manylinux_2_34@sha256:4a2bc100ea7a2ff077c5e162ef0e6ce424cce719ac565bc308c655b01f7932a2" }
+    name: "${{ matrix.PYTHON.VERSION }} for ${{ matrix.MANYLINUX.NAME }} (QEMU)"
+    steps:
+      - name: Get build-requirements.txt from repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          # The tag to build or the tag received by the tag event
+          ref: ${{ github.event.inputs.version || github.ref }}
+          persist-credentials: false
+          sparse-checkout: |
+            ${{ env.BUILD_REQUIREMENTS_PATH }}
+            .github/actions/wheel-smoketest/
+          sparse-checkout-cone-mode: false
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: cryptography-sdist
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
+        with:
+          platforms: ppc64le
+
+      - name: Build, repair and smoketest the wheel (QEMU-emulated ppc64le)
+        run: |
+          docker run --rm --platform linux/ppc64le \
+            -v "$PWD":/io -w /io \
+            -e RUSTUP_HOME=/root/.rustup \
+            -e BUILD_REQUIREMENTS_PATH \
+            -e PYVER="${{ matrix.PYTHON.VERSION }}" \
+            -e ABI_VERSION="${{ matrix.PYTHON.ABI_VERSION }}" \
+            -e PLAT="${{ matrix.MANYLINUX.NAME }}" \
+            -e TEST_PIP="${{ startsWith(matrix.PYTHON.VERSION, 'cp') }}" \
+            ghcr.io/pyca/${{ matrix.MANYLINUX.CONTAINER }} \
+            bash -exc "
+              mkdir tmpwheelhouse
+
+              if [ -n \"\$ABI_VERSION\" ]; then
+                  PY_LIMITED_API=\"--config-settings=build-args=--features=pyo3/abi3-\$ABI_VERSION\"
+              fi
+
+              # The manylinux-entrypoint script accounts for uname issues, otherwise
+              # the platform tag on armv7 wheels might be tagged as aarch64 under
+              # docker running on an arm64 CPU
+              OPENSSL_DIR=\"/opt/pyca/cryptography/openssl\" \
+                  OPENSSL_STATIC=1 \
+                  manylinux-entrypoint uv build --python=/opt/python/\$PYVER/bin/python --wheel --require-hashes --build-constraint=\$BUILD_REQUIREMENTS_PATH \$PY_LIMITED_API --config-settings=build-args=--sbom-include=/opt/pyca/cryptography/openssl/sbom.json cryptography*.tar.gz -o tmpwheelhouse/
+
+              auditwheel repair --plat \$PLAT tmpwheelhouse/cryptography*.whl -w wheelhouse/
+              unzip wheelhouse/*.whl -d execstack.check
+              results=\$(readelf -lW execstack.check/cryptography/hazmat/bindings/*.so)
+              count=\$(echo \"\$results\" | awk \"/GNU_STACK.*[R ][W ]E/{n++} END{print n+0}\")
+              if [ \"\$count\" -ne 0 ]; then
+                exit 1
+              fi
+
+              # Smoketest (translated from .github/actions/wheel-smoketest/action.yml)
+              uv venv --python=\"/opt/python/\$PYVER/bin/python\"
+              uv pip install --require-hashes -r \"\$BUILD_REQUIREMENTS_PATH\"
+              uv pip install cryptography --no-index -f wheelhouse/
+              uv run python3 -c 'if True:
+              from cryptography.hazmat.backends.openssl.backend import backend
+              enc = \"ascii\"
+              print(f\"Loaded: {backend.openssl_version_text()}\")
+              print(f\"Linked Against: {backend._ffi.string(backend._lib.OPENSSL_VERSION_TEXT).decode(enc)}\")
+              '
+
+              if [ \"\$TEST_PIP\" = \"true\" ]; then
+                \"/opt/python/\$PYVER/bin/python\" -m venv .venv-pip-test
+                .venv-pip-test/bin/pip install --require-hashes -r \"\$BUILD_REQUIREMENTS_PATH\"
+                .venv-pip-test/bin/pip install cryptography --no-index -f wheelhouse/
+                .venv-pip-test/bin/python -c 'if True:
+              from cryptography.hazmat.backends.openssl.backend import backend
+              enc = \"ascii\"
+              print(f\"pip install - Loaded: {backend.openssl_version_text()}\")
+              print(f\"pip install - Linked Against: {backend._ffi.string(backend._lib.OPENSSL_VERSION_TEXT).decode(enc)}\")
+              '
+              fi
+            "
+      - run: sudo chown -R "$(id -u):$(id -g)" wheelhouse
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: "cryptography-${{ github.event.inputs.version }}-${{ matrix.MANYLINUX.NAME }}-${{ matrix.PYTHON.VERSION }}-${{ matrix.PYTHON.ABI_VERSION }}"
+          path: wheelhouse/
+          if-no-files-found: error
+
   macos:
     needs: [sdist]
     runs-on: macos-15
+    timeout-minutes: 45  # seal: cap job runtime
     strategy:
       fail-fast: false
       matrix:
@@ -201,7 +298,7 @@ jobs:
             DEPLOYMENT_TARGET: '11.0'
             ARCHFLAGS: '-arch arm64'
             _PYTHON_HOST_PLATFORM: 'macosx-11.0-arm64'
-          - VERSION: 'pypy-3.11'
+          - VERSION: 'pypy-3.11-v7.3.x'  # seal: setup-python's pypy-3.11 now resolves PyPy 8.x (pp80 ABI tag); 49.0.0 shipped pp73 wheels
             BIN_PATH: 'pypy3'
             DEPLOYMENT_TARGET: '11.0'
             _PYTHON_HOST_PLATFORM: 'macosx-11.0-arm64'
@@ -239,18 +336,75 @@ jobs:
         with:
           python-version: ${{ matrix.PYTHON.VERSION }}
         if: contains(matrix.PYTHON.VERSION, 'pypy')
-      - uses: dawidd6/action-download-artifact@b6e2e70617bc3265edd6dab6c906732b2f1ae151 # v21
+      # seal: the pyca/infra build-macos-openssl.yml OpenSSL 4.0.1 artifacts have expired
+      # (latest success now ships 4.0.3), so rebuild openssl-macos-universal2 inline exactly
+      # as pyca/infra@a693946ecb ("openssl 4.0.1") did: same version/sha256/flags script,
+      # per-arch Configure + CFLAGS + openssldir + prefix, lipo universal2, generate_sbom.py.
+      - name: Get pyca/infra OpenSSL build scripts (seal)
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
-          repo: pyca/infra
-          workflow: build-macos-openssl.yml
-          branch: main
-          workflow_conclusion: success
-          name: openssl-macos-universal2
-          path: "../openssl-macos-universal2/"
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          repository: pyca/infra
+          ref: a693946ecbabe2c6f6543977b7e304664dc7f856
+          path: pyca-infra
+          persist-credentials: false
+      - name: Build OpenSSL for macOS universal2 (seal, reproduces pyca/infra build-macos-openssl.yml)
+        run: |
+          set -x
+          source ./pyca-infra/cryptography-linux/openssl-version.sh
+          WORKDIR=$(pwd)/openssl-build
+          mkdir -p "$WORKDIR"
+          cd "$WORKDIR"
+          curl -Lo openssl.tar.gz https://github.com/openssl/openssl/releases/download/$OPENSSL_VERSION/$OPENSSL_VERSION.tar.gz
+          shasum -a 256 -c <<< "$OPENSSL_SHA256 *openssl.tar.gz"
+          # pyca/infra builds each arch in its own job with --prefix=<workspace>/artifact;
+          # reuse that exact prefix so the compiled-in install paths match.
+          BASEDIR=/Users/runner/work/infra/infra
+          for ARCH in x86_64 arm64; do
+            if [ "$ARCH" = "x86_64" ]; then
+              ARTIFACT_NAME=x86-64
+              ARCH_CFLAGS="-mmacosx-version-min=10.12 -march=core2"
+              OPENSSLDIR="/usr/local/etc/openssl@3"
+            else
+              ARTIFACT_NAME=arm64
+              ARCH_CFLAGS="-mmacosx-version-min=11.0"
+              OPENSSLDIR="/opt/homebrew/etc/openssl@3"
+            fi
+            rm -rf "$BASEDIR" "src-$ARCH"
+            mkdir -p "$BASEDIR/artifact" "src-$ARCH"
+            tar zxf openssl.tar.gz -C "src-$ARCH"
+            (
+              cd src-$ARCH/openssl*
+              export CFLAGS="$ARCH_CFLAGS"
+              perl ./Configure \
+                  --prefix="${BASEDIR}/artifact" \
+                  --openssldir=${OPENSSLDIR} \
+                  darwin64-${ARCH}-cc \
+                  $OPENSSL_BUILD_FLAGS
+              make -j$(sysctl -n hw.logicalcpu)
+              make install_sw
+            )
+            mv "$BASEDIR/artifact" "$WORKDIR/$ARTIFACT_NAME"
+          done
+          rm -rf "$BASEDIR"
+          # universal2 job of build-macos-openssl.yml
+          mkdir -p "$GITHUB_WORKSPACE/../openssl-macos-universal2"
+          cd "$GITHUB_WORKSPACE/../openssl-macos-universal2"
+          mkdir bin lib
+          cp -r "$WORKDIR/x86-64/include" .
+          cp -r "$WORKDIR/x86-64/lib/pkgconfig" lib/
+          lipo -create -output lib/libssl.a "$WORKDIR/x86-64/lib/libssl.a" "$WORKDIR/arm64/lib/libssl.a"
+          lipo -create -output lib/libcrypto.a "$WORKDIR/x86-64/lib/libcrypto.a" "$WORKDIR/arm64/lib/libcrypto.a"
+          python3 "$GITHUB_WORKSPACE/pyca-infra/cryptography-linux/generate_sbom.py" \
+            --openssl-version "$OPENSSL_VERSION" \
+            --openssl-sha256 "$OPENSSL_SHA256" \
+            --architecture universal2 \
+            --operating-system macos \
+            --build-flags "$OPENSSL_BUILD_FLAGS" \
+            --output sbom.json
+          ls -R . && cat sbom.json
       - uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9
         with:
-          toolchain: stable
+          toolchain: 1.96.0  # seal: rustc used for the public 49.0.0 wheels (was: stable)
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: cryptography-sdist
@@ -292,7 +446,7 @@ jobs:
   windows:
     needs: [sdist]
     runs-on: ${{ matrix.WINDOWS.RUNNER }}
-    timeout-minutes: 15
+    timeout-minutes: 45  # seal: was 15; now also builds OpenSSL inline
     strategy:
       fail-fast: false
       matrix:
@@ -302,16 +456,17 @@ jobs:
           - {VERSION: "3.14", "ABI_VERSION": "py39"}
           - {VERSION: "3.14", "ABI_VERSION": "py311"}
           - {VERSION: "3.14t"}
-          - {VERSION: "pypy-3.11"}
-        include:
+          - {VERSION: "pypy-3.11-v7.3.x"}  # seal: setup-python's pypy-3.11 now resolves PyPy 8.x (pp80 ABI tag); 49.0.0 shipped pp73 wheels
+        # seal: Windows arm64 legs dropped — upstream soft-fails them via continue-on-error and never uploads their wheels (not in the public 49.0.0 set)
+        # include:
           # Windows on ARM is in a stability validation period; the work
           # step uses `continue-on-error` only for these entries so transient
           # failures don't block the release pipeline and no broken wheel
           # is uploaded.
-          - WINDOWS: {ARCH: 'arm64', WINDOWS: 'arm64', RUST_TRIPLE: 'aarch64-pc-windows-msvc', RUNNER: 'windows-11-arm'}
-            PYTHON: {VERSION: "3.14", "ABI_VERSION": "py311"}
-          - WINDOWS: {ARCH: 'arm64', WINDOWS: 'arm64', RUST_TRIPLE: 'aarch64-pc-windows-msvc', RUNNER: 'windows-11-arm'}
-            PYTHON: {VERSION: "3.14t"}
+          # - WINDOWS: {ARCH: 'arm64', WINDOWS: 'arm64', RUST_TRIPLE: 'aarch64-pc-windows-msvc', RUNNER: 'windows-11-arm'}
+          #   PYTHON: {VERSION: "3.14", "ABI_VERSION": "py311"}
+          # - WINDOWS: {ARCH: 'arm64', WINDOWS: 'arm64', RUST_TRIPLE: 'aarch64-pc-windows-msvc', RUNNER: 'windows-11-arm'}
+          #   PYTHON: {VERSION: "3.14t"}
     name: "${{ matrix.PYTHON.VERSION }} ${{ matrix.WINDOWS.WINDOWS }} ${{ matrix.PYTHON.ABI_VERSION }}"
     steps:
       - name: Get build-requirements.txt from repository
@@ -327,20 +482,116 @@ jobs:
             .github/actions/wheel-smoketest/
           sparse-checkout-cone-mode: false
 
-      - id: build
-        continue-on-error: ${{ matrix.WINDOWS.ARCH == 'arm64' }}
-        uses: ./.github/actions/windows-wheel
+      # seal: the steps below are .github/actions/windows-wheel inlined verbatim (the
+      # composite action's `continue-on-error` for arm64 is carried onto every step), except:
+      #  - the pyca/infra build-windows-openssl.yml download is replaced by an inline OpenSSL
+      #    4.0.1 build (the June artifacts have expired; latest success ships 4.0.3). It
+      #    reproduces pyca/infra@a693946ecb ("openssl 4.0.1") plus its two runner-drift-only
+      #    follow-ups: 72cba49f6e (locate VS via vswhere, its direct child — same version,
+      #    sha256, flags and sbom script) and 44f635b3d5 (extract with tar, not WinRAR).
+      #    It runs before Setup python so `python3` is the runner's, as in pyca/infra.
+      #  - the Rust toolchain is pinned to 1.96.0 (was: stable).
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: cryptography-sdist
+
+      - name: Get pyca/infra OpenSSL build scripts (seal)
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          repository: pyca/infra
+          ref: 72cba49f6e419fdff8973ee7db48913053ea8730
+          path: pyca-infra
+          persist-credentials: false
+      - run: choco install -y nasm jom
+      - name: Export OpenSSL version (seal)
+        run: |
+          source ./pyca-infra/cryptography-linux/openssl-version.sh
+          echo "OPENSSL_VERSION=$OPENSSL_VERSION" >> $GITHUB_ENV
+          echo "OPENSSL_SHA256=$OPENSSL_SHA256" >> $GITHUB_ENV
+          echo "OPENSSL_BUILD_FLAGS_WINDOWS=$OPENSSL_BUILD_FLAGS_WINDOWS" >> $GITHUB_ENV
+          mkdir openssl-build
+        shell: bash
+      - name: Download OpenSSL source (seal)
+        working-directory: openssl-build
+        run: |
+          wget "https://github.com/openssl/openssl/releases/download/${env:OPENSSL_VERSION}/${env:OPENSSL_VERSION}.tar.gz" -OutFile 'openssl-latest.tar.gz'
+          if ((Get-FileHash openssl-latest.tar.gz -Algorithm SHA256).Hash -ne $env:OPENSSL_SHA256) {
+              Write-Error 'Hashes do not match' -ErrorAction Stop
+          }
+        shell: powershell
+      - run: tar -xzf openssl-latest.tar.gz
+        working-directory: openssl-build
+        shell: cmd
+      - run: ..\pyca-infra\windows\openssl\build_openssl.bat ${{ matrix.WINDOWS.WINDOWS }}
+        working-directory: openssl-build
+        shell: cmd
+      - name: Generate SBOM and lay out C:/openssl-<name>/ like the pyca/infra artifact (seal)
+        run: |
+          source ./pyca-infra/cryptography-linux/openssl-version.sh
+          python3 ./pyca-infra/cryptography-linux/generate_sbom.py \
+            --openssl-version "$OPENSSL_VERSION" \
+            --openssl-sha256 "$OPENSSL_SHA256" \
+            --architecture "${OPENSSL_NAME}" \
+            --operating-system windows \
+            --build-flags "$OPENSSL_BUILD_FLAGS_WINDOWS" \
+            --output openssl-build/build/sbom.json
+          mkdir -p "C:/openssl-${OPENSSL_NAME}"
+          cp -r openssl-build/build/. "C:/openssl-${OPENSSL_NAME}/"
+          ls -R "C:/openssl-${OPENSSL_NAME}" | head -50
+          cat "C:/openssl-${OPENSSL_NAME}/sbom.json"
+        env:
+          OPENSSL_NAME: ${{ matrix.WINDOWS.WINDOWS }}
+        shell: bash
+
+      - name: Setup python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ matrix.PYTHON.VERSION }}
-          abi-version: ${{ matrix.PYTHON.ABI_VERSION }}
-          arch: ${{ matrix.WINDOWS.ARCH }}
-          rust-triple: ${{ matrix.WINDOWS.RUST_TRIPLE }}
-          openssl-name: ${{ matrix.WINDOWS.WINDOWS }}
+          architecture: ${{ matrix.WINDOWS.ARCH }}
+      - uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9
+        with:
+          toolchain: 1.96.0  # seal: rustc used for the public 49.0.0 wheels (was: stable)
+          target: ${{ matrix.WINDOWS.RUST_TRIPLE }}
+
+      - name: Configure OpenSSL
+        run: |
+            echo "OPENSSL_DIR=C:/openssl-${OPENSSL_NAME}" >> $GITHUB_ENV
+            echo "OPENSSL_STATIC=1" >> $GITHUB_ENV
+        env:
+          OPENSSL_NAME: ${{ matrix.WINDOWS.WINDOWS }}
+        shell: bash
+
+      - run: pip install -r "${UV_REQUIREMENTS_PATH}"
+        shell: bash
+      - run: mkdir wheelhouse
+        shell: bash
+      - id: build
+        run: |
+          if [ -n "${ABI_VERSION}" ]; then
+              PY_LIMITED_API="--config-settings=build-args=--features=pyo3/abi3-${ABI_VERSION}"
+          fi
+
+          uv build --wheel --require-hashes --build-constraint="${BUILD_REQUIREMENTS_PATH}" cryptography*.tar.gz $PY_LIMITED_API --config-settings=build-args=--sbom-include="C:/openssl-${OPENSSL_NAME}/sbom.json" -o wheelhouse/
+        env:
+          ABI_VERSION: ${{ matrix.PYTHON.ABI_VERSION }}
+          OPENSSL_NAME: ${{ matrix.WINDOWS.WINDOWS }}
+        shell: bash
+
+      - name: Smoketest
+        id: smoketest
+        uses: ./.github/actions/wheel-smoketest
+        with:
           build-requirements-path: ${{ env.BUILD_REQUIREMENTS_PATH }}
-          uv-requirements-path: ${{ env.UV_REQUIREMENTS_PATH }}
-          wheel-artifact-name: "cryptography-${{ github.event.inputs.version }}-${{ matrix.WINDOWS.WINDOWS }}-${{ matrix.PYTHON.VERSION }}-${{ matrix.PYTHON.ABI_VERSION }}"
+
+      # Windows on ARM is in a stability validation period; build and
+      # smoke-test the wheel but do not upload it so it cannot be published.
+      - if: matrix.WINDOWS.ARCH != 'arm64'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: "cryptography-${{ github.event.inputs.version }}-${{ matrix.WINDOWS.WINDOWS }}-${{ matrix.PYTHON.VERSION }}-${{ matrix.PYTHON.ABI_VERSION }}"
+          path: wheelhouse\
       - name: Report soft failure
-        if: always() && matrix.WINDOWS.ARCH == 'arm64' && steps.build.outcome != 'success'
+        if: always() && matrix.WINDOWS.ARCH == 'arm64' && (steps.build.outcome != 'success' || steps.smoketest.outcome != 'success')  # seal: build+smoketest now inlined
         shell: bash
         run: |
           echo "::warning title=windows-arm64 soft failure::A step failed but the job is reported as success while Windows on ARM is in stability validation."

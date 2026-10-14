@@ -4,9 +4,7 @@ permissions:
 
 on:
   workflow_dispatch:
-  schedule:
-    # Run daily
-    - cron: "0 10 * * *"
+  # seal: schedule trigger removed on fork
 
 jobs:
   bump:
